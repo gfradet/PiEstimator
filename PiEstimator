@@ -1,1 +1,100 @@
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.TimerTask;
+
+public class PiEstimator {
+    public static void main(String[] args) {
+        piThread thread = new piThread(); 
+        thread.start(); 
+    
+        JFrame f = new JFrame("Pi Estimator");  
+        JButton button = new JButton("Run");  
+
+
+        JLabel real = new JLabel("Actual value of pi: " + Double.toString(Math.PI));
+        JLabel estimator = new JLabel(); 
+        JLabel numTrial = new JLabel(); 
+                    
+        f.add(real);
+        f.add(estimator); 
+        f.add(numTrial); 
+        f.add(button);  
+        f.setSize(300,300);  
+        f.setLayout(new GridLayout(4, 1));  
+        f.setVisible(true);   
+    
+        button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed (ActionEvent e) { 
+                if(button.getText().equals("Pause")) {
+                    button.setText("Run"); 
+                    synchronized(thread) { 
+                        thread.running = true; 
+                        thread.notify();
+                    }
+                } else { 
+                    button.setText("Pause");
+                    thread.running = false; 
+                }
+            }
+        }); 
+
+        int temp = 1000000; 
+        while(true) { 
+            if(thread.getN() > temp) {
+                numTrial.setText("Number of Trials: " + thread.getN());
+                estimator.setText("Current estimate: " + thread.getPi()); 
+                temp+= 1000000; 
+            } else { 
+                System.out.println("final pi estimation is: " + thread.getPi());
+            }
+        }
+    }
+}
+
+class piThread extends Thread {
+    public boolean running = true; 
+
+    public static int inside = 0; 
+    public static int total = 0; 
+
+    public static double pi = 0; 
+    
+    public void run() { 
+        while(true) { 
+            //System.out.println("running");
+            synchronized(this) { 
+                if(!running) {
+                    try {
+                        System.out.println("Paused!");
+                        wait();
+                    } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                    }
+                }
+            }
+            
+            double x = Math.random();
+            double y = Math.random(); 
+            
+            if(((x*x) + (y*y)) < 1) inside++; 
+            total++; 
+            pi = ((double) inside/total)*4;
+        }
+    }
+
+    public double getPi() { 
+        return pi; 
+    }
+
+    public int getN() { 
+        return total; 
+    }
+}
